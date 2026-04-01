@@ -80,14 +80,26 @@
 
         updateStatus('📊 正在解析報告資料...');
 
-        // Base64 解碼並解析 JSON
+        // URL-safe Base64 解碼並解析 JSON
         let flexMessage;
         try {
-          const decodedData = atob(flexData);
+          // 將 URL-safe Base64 轉換為標準 Base64
+          // 替換 - 為 +，_ 為 /
+          let base64Data = flexData.replace(/-/g, '+').replace(/_/g, '/');
+
+          // 補齊 padding（如果需要）
+          while (base64Data.length % 4) {
+            base64Data += '=';
+          }
+
+          const decodedData = atob(base64Data);
           flexMessage = JSON.parse(decodedData);
+          console.log('✅ Flex Message 解析成功:', flexMessage);
         } catch (e) {
           updateStatus('❌ 報告資料格式錯誤', true);
           console.error('解析錯誤:', e);
+          console.error('原始 flexData 長度:', flexData.length);
+          console.error('flexData 前 100 字元:', flexData.substring(0, 100));
           setTimeout(() => liff.closeWindow(), 2000);
           return;
         }
