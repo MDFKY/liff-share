@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分享市場報告</title>
+  <script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+    :root {
+      --fubon-blue: #0072C6;
+      --fubon-teal: #00C2A8;
+      --fubon-dark: #1a2a3a;
+      --fubon-light: #f0f6ff;
+      --fubon-orange: #FF6B00;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--fubon-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,114,198,0.12);
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--fubon-blue);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -1px;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--fubon-dark);
+    }
+
+    .logo-sub {
+      font-size: 12px;
+      color: #888;
+      margin-top: 1px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--fubon-dark);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .status-box {
+      background: var(--fubon-light);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #555;
+      border-left: 4px solid var(--fubon-blue);
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-box.success { border-color: var(--fubon-teal); color: #00896e; background: #e6faf7; }
+    .status-box.error   { border-color: var(--fubon-orange); color: #c0390a; background: #fff3ee; }
+    .status-box.loading { border-color: #aaa; color: #666; }
+
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--fubon-blue);
+      flex-shrink: 0;
+    }
+    .dot.green  { background: var(--fubon-teal); }
+    .dot.red    { background: var(--fubon-orange); }
+    .dot.pulse  {
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--fubon-teal);
+      color: white;
+    }
+    .btn-primary:hover { background: #00a894; }
+    .btn-primary:disabled { background: #b0e8e2; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--fubon-blue);
+      color: white;
+    }
+    .btn-secondary:hover { background: #005fa3; }
+    .btn-secondary:disabled { background: #b0cfe8; cursor: not-allowed; }
+
+    .btn-outline {
+      background: transparent;
+      color: #888;
+      border: 1.5px solid #ddd;
+    }
+    .btn-outline:hover { border-color: #aaa; color: #555; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 16px 0;
+    }
+
+    .debug-section {
+      margin-top: 20px;
+    }
+
+    .debug-toggle {
+      font-size: 12px;
+      color: #aaa;
+      cursor: pointer;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .debug-content {
+      display: none;
+      background: #f8f8f8;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.8;
+      margin-top: 8px;
+    }
+
+    .debug-content.open { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-row">
+    <div class="logo-icon">FB</div>
+    <div>
+      <div class="logo-text">富邦期貨</div>
+      <div class="logo-sub">市場報告分享器</div>
+    </div>
+  </div>
+
+  <h1>📊 分享市場報告</h1>
+  <p class="subtitle">點擊下方按鈕，將市場分析報告分享給您的好友或群組。</p>
+
+  <div class="status-box loading" id="statusBox">
+    <span class="dot pulse" id="statusDot"></span>
+    <span id="statusText">正在初始化 LIFF...</span>
+  </div>
+
+  <button class="btn btn-primary" id="btnShare" disabled>
+    📤 分享市場報告
+  </button>
+
+  <button class="btn btn-secondary" id="btnShareSimple" disabled>
+    💬 分享簡單文字訊息
+  </button>
+
+  <hr class="divider" />
+
+  <button class="btn btn-outline" id="btnClose">
+    ✕ 關閉
+  </button>
+
+  <div class="debug-section">
+    <div class="debug-toggle" onclick="toggleDebug()">▼ 偵錯資訊</div>
+    <div class="debug-content" id="debugContent">載入中...</div>
+  </div>
+</div>
+
+<script>
+  const LIFF_ID = "YOUR_LIFF_ID"; // ← 填入你的 LIFF ID
+
+  const statusBox  = document.getElementById('statusBox');
+  const statusDot  = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const btnShare   = document.getElementById('btnShare');
+  const btnShareSimple = document.getElementById('btnShareSimple');
+  const debugContent   = document.getElementById('debugContent');
+
+  function setStatus(type, text) {
+    statusBox.className = 'status-box ' + type;
+    statusDot.className = 'dot' + (type === 'loading' ? ' pulse' : type === 'success' ? ' green' : ' red');
+    statusText.textContent = text;
+  }
+
+  function toggleDebug() {
+    debugContent.classList.toggle('open');
+  }
+
+  function updateDebug(info) {
+    debugContent.innerHTML = Object.entries(info)
+      .map(([k, v]) => `<b>${k}</b>：${v}`)
+      .join('<br>');
+  }
+
+  // 取得 URL 參數中的 flex message
+  function getFlexFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const flexParam = params.get('flex');
+    if (flexParam) {
+      try {
+        return JSON.parse(decodeURIComponent(flexParam));
+      } catch (e) {
+        console.warn('flex 參數解析失敗', e);
+      }
+    }
+    return null;
+  }
+
+  // 預設 Flex Message（當 URL 沒有帶 flex 參數時使用）
+  const defaultFlexMessage = {
+    type: "bubble",
+    header: {
+      type: "box", layout: "vertical",
+      backgroundColor: "#0072C6",
+      contents: [{
+        type: "text", text: "富邦期貨 市場報告",
+        color: "#ffffff", size: "lg", weight: "bold"
+      }]
+    },
+    body: {
+      type: "box", layout: "vertical",
+      contents: [
+        { type: "text", text: "📊 今日市場分析", weight: "bold", size: "md", margin: "none" },
+        { type: "text", text: "請查看最新市場動態與投資建議。", wrap: true, color: "#666666", size: "sm", margin: "sm" }
+      ]
+    },
+    footer: {
+      type: "box", layout: "vertical",
+      contents: [{
+        type: "button",
+        action: { type: "uri", label: "查看詳情", uri: "https://www.fbs.com.tw" },
+        style: "primary", color: "#00C2A8"
+      }]
+    }
+  };
+
+  async function initLiff() {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+
+      const isInClient = liff.isInClient();
+      const isLoggedIn = liff.isLoggedIn();
+      const canShare   = liff.isApiAvailable('shareTargetPicker');
+
+      updateDebug({
+        '環境': isInClient ? 'LINE App 內' : '外部瀏覽器',
+        '登入狀態': isLoggedIn ? '已登入' : '未登入',
+        'shareTargetPicker': canShare ? '✅ 可用' : '❌ 不可用',
+        'LIFF ID': LIFF_ID,
+        'flex 參數': getFlexFromUrl() ? '✅ 有' : '❌ 無（使用預設）'
+      });
+
+      if (!isInClient) {
+        setStatus('error', '請在 LINE App 內開啟此頁面才能使用分享功能');
+        return;
+      }
+
+      if (!isLoggedIn) {
+        liff.login();
+        return;
+      }
+
+      if (!canShare) {
+        setStatus('error', 'shareTargetPicker 不可用，請更新 LINE App');
+        return;
+      }
+
+      setStatus('success', '✅ 初始化成功，請點擊分享按鈕');
+      btnShare.disabled = false;
+      btnShareSimple.disabled = false;
+
+    } catch (err) {
+      setStatus('error', '初始化失敗：' + err.message);
+      updateDebug({ '錯誤': err.message });
+    }
+  }
+
+  btnShare.onclick = async () => {
+    try {
+      setStatus('loading', '開啟分享選擇器...');
+      const flexContents = getFlexFromUrl() || defaultFlexMessage;
+      const result = await liff.shareTargetPicker([{
+        type: 'flex',
+        altText: '📊 富邦期貨市場分析報告',
+        contents: flexContents
+      }]);
+      if (result) {
+        setStatus('success', '✅ 分享成功！');
+      } else {
+        setStatus('success', '已取消分享');
+      }
+    } catch (err) {
+      setStatus('error', '分享失敗：' + err.message);
+    }
+  };
+
+  btnShareSimple.onclick = async () => {
+    try {
+      setStatus('loading', '開啟分享選擇器...');
+      const result = await liff.shareTargetPicker([{
+        type: 'text',
+        text: '📊 富邦期貨市場報告\n\n今日市場分析已更新，請前往官網查看最新資訊。\nhttps://www.fbs.com.tw'
+      }]);
+      if (result) {
+        setStatus('success', '✅ 分享成功！');
+      } else {
+        setStatus('success', '已取消分享');
+      }
+    } catch (err) {
+      setStatus('error', '分享失敗：' + err.message);
+    }
+  };
+
+  document.getElementById('btnClose').onclick = () => {
+    liff.closeWindow();
+  };
+
+  initLiff();
+</script>
+</body>
+</html>
