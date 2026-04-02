@@ -59,36 +59,66 @@
         // 1. 初始化 LIFF（先初始化，才能使用 liff.closeWindow）
         await liff.init({ liffId: "2009494611-a6cUT7JK" });
 
-        // 2. 從 URL 取得 Flex Message
+        // 2. 從 URL 取得參數
         const urlParams = new URLSearchParams(window.location.search);
-        const flexData = urlParams.get('flex');
+        const userId = urlParams.get('uid');      // 新方式：從 API 獲取
+        const flexData = urlParams.get('flex');   // 舊方式：Base64 解碼
 
-        if (!flexData) {
-          updateStatus('❌ 沒有收到報告資料', true);
-          setTimeout(() => liff.closeWindow(), 2000);
-          return;
-        }
-
-        updateStatus('正在解析報告資料...');
-
-        // 3. URL-safe Base64 解碼並解析 JSON
         let flexMessage;
-        try {
-          // 將 URL-safe Base64 轉換為標準 Base64
-          let base64Data = flexData.replace(/-/g, '+').replace(/_/g, '/');
 
-          // 補齊 padding
-          while (base64Data.length % 4) {
-            base64Data += '=';
+        // 3. 根據參數類型獲取 Flex Message
+        if (userId) {
+          // 方式 A：從 Flask API 獲取（推薦）
+          updateStatus('正在從伺服器載入...');
+
+          try {
+            // TODO: 替換為你的 ngrok URL
+            const API_BASE_URL = 'https://angila-unsquashable-lavonne.ngrok-free.dev';
+            const response = await fetch(`${API_BASE_URL}/api/share/${userId}`);
+
+            if (!response.ok) {
+              updateStatus('❌ 找不到分享內容', true);
+              setTimeout(() => liff.closeWindow(), 2000);
+              return;
+            }
+
+            const data = await response.json();
+            flexMessage = data.data;
+            console.log('✅ 從 API 獲取 Flex Message 成功:', flexMessage);
+
+          } catch (e) {
+            updateStatus('❌ 無法連接伺服器', true);
+            console.error('API 錯誤:', e);
+            setTimeout(() => liff.closeWindow(), 2000);
+            return;
           }
 
-          const decodedData = atob(base64Data);
-          flexMessage = JSON.parse(decodedData);
-          console.log('✅ Flex Message 解析成功:', flexMessage);
-        } catch (e) {
-          updateStatus('❌ 報告資料格式錯誤', true);
-          console.error('解析錯誤:', e);
-          console.error('flexData 長度:', flexData.length);
+        } else if (flexData) {
+          // 方式 B：Base64 解碼（舊方式）
+          updateStatus('正在解析報告資料...');
+
+          try {
+            // 將 URL-safe Base64 轉換為標準 Base64
+            let base64Data = flexData.replace(/-/g, '+').replace(/_/g, '/');
+
+            // 補齊 padding
+            while (base64Data.length % 4) {
+              base64Data += '=';
+            }
+
+            const decodedData = atob(base64Data);
+            flexMessage = JSON.parse(decodedData);
+            console.log('✅ Flex Message 解析成功:', flexMessage);
+
+          } catch (e) {
+            updateStatus('❌ 報告資料格式錯誤', true);
+            console.error('解析錯誤:', e);
+            setTimeout(() => liff.closeWindow(), 2000);
+            return;
+          }
+
+        } else {
+          updateStatus('❌ 沒有收到報告資料', true);
           setTimeout(() => liff.closeWindow(), 2000);
           return;
         }
