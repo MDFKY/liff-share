@@ -1,180 +1,83 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>正在啟動分享...</title>
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f4f4f4;
-    }
-    .loader {
-      border: 5px solid #e0e0e0;
-      border-top: 5px solid #00E2B1;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    #status {
-      margin-top: 15px;
-      color: #666;
-      font-size: 14px;
-    }
-    .error {
-      color: #c62828;
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在啟動分享...</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f4; }
+        .loader { border: 5px solid #e0e0e0; border-top: 5px solid #00E2B1; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #status { margin-top: 15px; color: #666; font-size: 14px; }
+    </style>
 </head>
 <body>
-  <div class="loader"></div>
-  <div id="status">請稍候，正在開啟分享列表...</div>
 
-  <script>
-    const statusEl = document.getElementById('status');
+    <div class="loader"></div>
+    <div id="status">請稍候，正在開啟分享列表...</div>
 
-    function updateStatus(message, isError = false) {
-      statusEl.textContent = message;
-      if (isError) {
-        statusEl.classList.add('error');
-      }
-      console.log(message);
-    }
+    <script>
+        async function main() {
+            try {
+                // 1. 初始化 LIFF (使用您的 ID)
+                await liff.init({ liffId: "2009494611-a6cUT7JK" });
 
-    async function main() {
-      try {
-        // 1. 初始化 LIFF（先初始化，才能使用 liff.closeWindow）
-        await liff.init({ liffId: "2009494611-a6cUT7JK" });
+                // 2. 登入檢查
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
 
-        // 2. 從 URL 取得參數
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('uid');      // 新方式：從 API 獲取
-        const flexData = urlParams.get('flex');   // 舊方式：Base64 解碼
+                // 3. 呼叫分享功能
+                if (liff.isApiAvailable('shareTargetPicker')) {
+                    const result = await liff.shareTargetPicker([
+                        {
+                            "type": "flex",
+                            "altText": "這是一份很重要的分析報告，分享給你！",
+                            "contents": {
+                                "type": "bubble",
+                                "hero": {
+                                    "type": "image",
+                                    "url": "https://your-image-url.com/report_cover.jpg",
+                                    "size": "full", "aspectRatio": "20:13", "aspectMode": "cover"
+                                },
+                                "body": {
+                                    "type": "box", "layout": "vertical",
+                                    "contents": [
+                                        { "type": "text", "text": "【清明連假全面分析】", "weight": "bold", "size": "xl" },
+                                        { "type": "text", "text": "中東戰事衝擊千點行情", "color": "#ff4500", "margin": "sm" }
+                                    ]
+                                },
+                                "footer": {
+                                    "type": "box", "layout": "vertical",
+                                    "contents": [{
+                                        "type": "button", "style": "primary", "color": "#00E2B1",
+                                        "action": { "type": "uri", "label": "點我查看詳情", "uri": "https://www.fubon.com/futures/" }
+                                    }]
+                                }
+                            }
+                        }
+                    ]);
 
-        let flexMessage;
-
-        // 3. 根據參數類型獲取 Flex Message
-        if (userId) {
-          // 方式 A：從 Flask API 獲取（推薦）
-          updateStatus('正在從伺服器載入...');
-
-          try {
-            // TODO: 替換為你的 ngrok URL
-            const API_BASE_URL = 'https://angila-unsquashable-lavonne.ngrok-free.dev';
-            const response = await fetch(`${API_BASE_URL}/api/share/${userId}`);
-
-            if (!response.ok) {
-              updateStatus('❌ 找不到分享內容', true);
-              setTimeout(() => liff.closeWindow(), 2000);
-              return;
+                    if (result) {
+                        document.getElementById('status').innerText = "發送成功！";
+                    } else {
+                        document.getElementById('status').innerText = "已取消分享。";
+                    }
+                } else {
+                    document.getElementById('status').innerText = "不支援分享 API。";
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('status').innerText = "系統錯誤，請重試。";
+            } finally {
+                // 1.5 秒後自動關閉頁面
+                setTimeout(() => liff.closeWindow(), 1500);
             }
-
-            const data = await response.json();
-            flexMessage = data.data;
-            console.log('✅ 從 API 獲取 Flex Message 成功:', flexMessage);
-
-          } catch (e) {
-            updateStatus('❌ 無法連接伺服器', true);
-            console.error('API 錯誤:', e);
-            setTimeout(() => liff.closeWindow(), 2000);
-            return;
-          }
-
-        } else if (flexData) {
-          // 方式 B：Base64 解碼（舊方式）
-          updateStatus('正在解析報告資料...');
-
-          try {
-            // 將 URL-safe Base64 轉換為標準 Base64
-            let base64Data = flexData.replace(/-/g, '+').replace(/_/g, '/');
-
-            // 補齊 padding
-            while (base64Data.length % 4) {
-              base64Data += '=';
-            }
-
-            const decodedData = atob(base64Data);
-            flexMessage = JSON.parse(decodedData);
-            console.log('✅ Flex Message 解析成功:', flexMessage);
-
-          } catch (e) {
-            updateStatus('❌ 報告資料格式錯誤', true);
-            console.error('解析錯誤:', e);
-            setTimeout(() => liff.closeWindow(), 2000);
-            return;
-          }
-
-        } else {
-          updateStatus('❌ 沒有收到報告資料', true);
-          setTimeout(() => liff.closeWindow(), 2000);
-          return;
         }
 
-        // 4. 檢查 API 可用性
-        if (!liff.isApiAvailable('shareTargetPicker')) {
-          updateStatus('不支援分享 API', true);
-          setTimeout(() => liff.closeWindow(), 2000);
-          return;
-        }
-
-        updateStatus('正在開啟分享列表...');
-
-        // 5. 移除分享按鈕（避免無限循環）
-        const shareMessage = JSON.parse(JSON.stringify(flexMessage));
-
-        if (shareMessage.footer && shareMessage.footer.contents) {
-          shareMessage.footer.contents = shareMessage.footer.contents.filter(item => {
-            if (item.type === 'button' && item.action && item.action.type === 'uri') {
-              const label = item.action.label || '';
-              return !label.includes('分享');
-            }
-            return true;
-          });
-        }
-
-        // 6. 呼叫分享功能
-        const result = await liff.shareTargetPicker([
-          {
-            "type": "flex",
-            "altText": "📊 全球市場深度分析報告",
-            "contents": shareMessage
-          }
-        ]);
-
-        if (result) {
-          updateStatus('發送成功！');
-        } else {
-          updateStatus('已取消分享');
-        }
-
-      } catch (error) {
-        console.error('錯誤:', error);
-
-        if (error.message && error.message.includes('cancel')) {
-          updateStatus('已取消分享');
-        } else {
-          updateStatus('系統錯誤，請重試', true);
-        }
-      } finally {
-        // 1.5 秒後自動關閉頁面
-        setTimeout(() => liff.closeWindow(), 1500);
-      }
-    }
-
-    window.onload = main;
-  </script>
+        window.onload = main;
+    </script>
 </body>
 </html>
