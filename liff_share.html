@@ -71,17 +71,43 @@
             const loaderElement = document.getElementById('loader');
 
             try {
-                // 1. 從 URL 獲取 gist_id
-                const urlParams = new URLSearchParams(window.location.search);
-                const gistId = urlParams.get('gist_id');
+                // 1. 優先從 fragment (#) 獲取 gist_id，其次從 query (?) 獲取
+                let gistId = null;
+
+                // 方法 1: 從 URL fragment 獲取 (推薦，LINE 不會過濾)
+                const hash = window.location.hash.substring(1); // 去掉 #
+                if (hash) {
+                    const hashParams = new URLSearchParams(hash);
+                    gistId = hashParams.get('gist_id');
+                    console.log('[Fragment] gist_id:', gistId);
+                }
+
+                // 方法 2: 從 URL query 獲取 (可能被 LINE 過濾)
+                if (!gistId) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    gistId = urlParams.get('gist_id');
+                    console.log('[Query] gist_id:', gistId);
+                }
+
+                // 調試輸出
+                console.log('完整 URL:', window.location.href);
+                console.log('Query string:', window.location.search);
+                console.log('Fragment:', window.location.hash);
+                console.log('最終 gist_id:', gistId);
 
                 if (!gistId) {
                     loaderElement.style.display = 'none';
                     statusElement.innerHTML = '<span class="error">❌ 錯誤：缺少 gist_id 參數</span>';
-                    gistInfoElement.textContent = '請通過正確的分享連結打開此頁面';
+                    gistInfoElement.innerHTML = `
+                        請通過正確的分享連結打開此頁面<br><br>
+                        <small>調試信息：<br>
+                        URL: ${window.location.href}<br>
+                        Query: ${window.location.search}<br>
+                        Fragment: ${window.location.hash}</small>
+                    `;
                     setTimeout(() => {
                         try { liff.closeWindow(); } catch(e) {}
-                    }, 3000);
+                    }, 5000);
                     return;
                 }
 
